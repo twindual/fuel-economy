@@ -98,7 +98,7 @@ function getFuelEconomy($vehicle = null, $debug = false)
         // First Load page to get Session ID
         $params     = array();
         $url        = $urlEcoCookie;
-        $userAgent  = $GLOBALS['userAgents'][0];
+        $userAgent  = null;
         $cookieFile = 'fueleconomy.gov.txt';
         $curlResult = doCurl('get', $url, $headers, $userAgent, $cookieFile, $params);
         
