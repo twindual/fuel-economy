@@ -3,13 +3,13 @@
 
 function doCurl($request, $url, $headers, $userAgent, $cookieFile, $params)
 {
-    const USER_AGENT = "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.6) Gecko/20070725 Firefox/2.0.0.6";
+    $USER_AGENT = "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.6) Gecko/20070725 Firefox/2.0.0.6";
     
     // Initialize cURL and set form URL to request.
     $curl = curl_init();
     curl_setopt($curl, CURLOPT_URL, $url);
     curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-    curl_setopt($curl, CURLOPT_USERAGENT,  USER_AGENT);
+    curl_setopt($curl, CURLOPT_USERAGENT,  $USER_AGENT);
     curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
     curl_setopt($curl, CURLOPT_MAXREDIRS, 5);
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
