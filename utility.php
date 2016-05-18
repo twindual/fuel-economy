@@ -281,7 +281,7 @@ function getEcoResults($source = '', $vehicle, $debug = false)
 */
 function getMpg( $vehicles, $vMake, $vModel, $vSubModel, $cylinders, $engineSize, $transmission, $drivetrain, $speed, $fuel, $debug)
 {
-    const MPG_TO_LKM = 235.215;
+    $MPG_TO_LKM = 235.215;
     $items = array();
     foreach($vehicles as $item) {
         if ($debug) { echo ">>> Parsing result<br/>"; }
@@ -457,9 +457,9 @@ function getMpg( $vehicles, $vMake, $vModel, $vSubModel, $cylinders, $engineSize
                         $items['gas']['mpg']['city']     = $city;
                         $items['gas']['mpg']['combined'] = $combined;
                         $items['gas']['mpg']['highway']  = $highway;
-                        $items['gas']['lkm']['city']     = number_format(MPG_TO_LKM / $city, 2);
-                        $items['gas']['lkm']['combined'] = number_format(MPG_TO_LKM / $combined, 2);
-                        $items['gas']['lkm']['highway']  = number_format(MPG_TO_LKM / $highway, 2);
+                        $items['gas']['lkm']['city']     = number_format($MPG_TO_LKM / $city, 2);
+                        $items['gas']['lkm']['combined'] = number_format($MPG_TO_LKM / $combined, 2);
+                        $items['gas']['lkm']['highway']  = number_format($MPG_TO_LKM / $highway, 2);
                     }
                     $fuelType = getInnerText($item, 'class="mpgSummary E85"', 'style="clear: both"', $debug)['data'];
                     if ($fuelType != '') {
@@ -473,9 +473,9 @@ function getMpg( $vehicles, $vMake, $vModel, $vSubModel, $cylinders, $engineSize
                         $items['e85']['mpg']['city']     = $city;
                         $items['e85']['mpg']['combined'] = $combined;
                         $items['e85']['mpg']['highway']  = $highway;
-                        $items['e85']['lkm']['city']     = number_format(MPG_TO_LKM / $city, 2);
-                        $items['e85']['lkm']['combined'] = number_format(MPG_TO_LKM / $combined, 2);
-                        $items['e85']['lkm']['highway']  = number_format(MPG_TO_LKM / $highway, 2);
+                        $items['e85']['lkm']['city']     = number_format($MPG_TO_LKM / $city, 2);
+                        $items['e85']['lkm']['combined'] = number_format($MPG_TO_LKM / $combined, 2);
+                        $items['e85']['lkm']['highway']  = number_format($MPG_TO_LKM / $highway, 2);
                     }
                     break;
                 }
