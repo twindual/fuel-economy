@@ -2,9 +2,10 @@
 
 API to get vehicle fuel economy from the U.S. E.P.A database off the official U.S. Government website at <a href="http://www.fueleconomy.gov/feg/ws/index.shtml" target="_blank" />fueleconomy.gov</a>.
 
-#
-
 Results are returned as a JSON object for the first vehicle found that matches the given parameters.
+
+The mileage is supplied from fueleconomy.gov as mpg (miles per gallon). We then convert it to lkm (liters per 100 kilometers).
+Then we return both sets of values for city, combined, and highway driving.
 
 We scrape the site for the data instead of using the web API since test results have shown that the web API provides different 
 and less data than navigating the site as a user.
@@ -35,11 +36,18 @@ The results are returned as a JSON object:
    }
 }
 ```
+
+If you are missing a required parameter it returns a error status and message as a JSON object.
+
+```javascript
+{"error":true,"message":"Missing 1 or more requried parameters: (year, make, model)"}
+```
+
 ## Parameters
 
-You can turn on debug output for fun by setting 'debug=on'.
-
 The only required parameters are year, make, and model.
+
+You can turn on debug output for fun by setting 'debug=on'.
 
 All the vehicle parameters get put into a vehicle array with an element for each valid parameter.
 
