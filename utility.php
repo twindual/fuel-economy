@@ -72,6 +72,7 @@ function fixEdgeCaseModel($make = '', $model = '', $subModel = '', $debug = fals
 function getFuelEconomy($vehicle = null, $debug = false)
 {
     // Init params to load search page settings.
+    $isMissingParams = false;
     $result = array();
     $params = array();
     $params['host'] = 'www.fueleconomy.gov';
@@ -95,79 +96,84 @@ function getFuelEconomy($vehicle = null, $debug = false)
         $urlEcoBase   = 'https://www.fueleconomy.gov/feg';
         $urlEcoCookie = $urlEcoBase.'/bymodel/'.$make.$year.'.shtml';
         
-        // First Load page to get Session ID
-        $params     = array();
-        $url        = $urlEcoCookie;
-        $userAgent  = null;
-        $cookieFile = 'fueleconomy.gov.txt';
-        $curlResult = doCurl('get', $url, $headers, $userAgent, $cookieFile, $params);
-        
-        // Get all the pages of search results.
-        if ($curlResult['status'] == 'success') {
-            
-            $tokenDivStart = 'class="nocircle"';
-            $tokenDivEnd = '</div>';
-            $response = getInnerText($curlResult['data'], $tokenDivStart, $tokenDivEnd, $debug);
-            if ($response['status'] == 'success') {
-                
-                // Now that we have our source snippet search this area.
-                $sourceDiv = $response['data'];
-                $items     = array();
-                
-                if (!is_null($sourceDiv) && $sourceDiv != '') {
-                    /*
-                    <ul class="nocircle">
-                         <li><a href="../bymodel/2007_Lincoln_MKX.shtml">Lincoln  MKX</a></li>
-                         <li><a href="../bymodel/2007_Lincoln_MKZ.shtml">Lincoln  MKZ</a></li>
-                         <li><a href="../bymodel/2007_Lincoln_Mark_LT.shtml">Lincoln  Mark LT</a></li>
-                         <li><a href="../bymodel/2007_Lincoln_Navigator.shtml">Lincoln  Navigator</a></li>
-                         <li><a href="../bymodel/2007_Lincoln_Town_Car.shtml">Lincoln  Town Car</a></li>
-                    </ul>
-                    */
-                    $tokenItemStart = '<li>';
-                    $tokenItemEnd   = '</li>';
-                    $response = getInnerTextMulti($sourceDiv, $tokenItemStart, $tokenItemEnd);
-                    if ($response['status'] == 'success') {
-                        if ($debug) { echo "Result count == ".count($response['data'])."<br/>"; }
-                        foreach($response['data'] as $item) {
-                           
-                            $vUrl       = $urlEcoBase.getInnerText($item, 'href="..', '">')['data'];
-                            $needle = '">'.$make;
-                            $vMakeModel = trim(getInnerText($item, $needle, '</a>')['data']);
-                            if ($debug) {
-                                echo "--- item       == [".$item."]<br/>";
-                                echo "--- URL        == [".$vUrl."]<br/>";
-                                echo "--- Needle     == [".$needle."]<br/>";
-                                echo "--- Make/Model == [".$vMakeModel."]<br/>";
-                                echo "*** Searching for [".$model."]<br/>";
-                            }
+        if ($year !== '' && $make !== '' && $model !== '') {
 
-                            if ($model !== '') {
-                                $nPosModel = strpos($vMakeModel, $model);
-                                if ($debug) { echo "--- nPosModel        == [".$nPosModel."]<br/>"; }
-                                if ($nPosModel !== false && $nPosModel >= 0) {
-                                    if ($debug) { echo "!!! FOUND IT<br/>"; }
-                                    
-                                    $curlResult = doCurl('get', $vUrl, $headers, $userAgent, $cookieFile, $params);
-                                    if ($curlResult['status'] == 'success') {
-                                        // Parse the result and find the vehicle.
-                                        $ecoResults = getEcoResults( $curlResult['data'], $vehicle, $debug);
-                                        $result = $ecoResults['data'];
+            // First Load page to get Session ID
+            $params     = array();
+            $url        = $urlEcoCookie;
+            $userAgent  = null;
+            $cookieFile = 'fueleconomy.gov.txt';
+            $curlResult = doCurl('get', $url, $headers, $userAgent, $cookieFile, $params);
+            
+            // Get all the pages of search results.
+            if ($curlResult['status'] == 'success') {
+                
+                $tokenDivStart = 'class="nocircle"';
+                $tokenDivEnd = '</div>';
+                $response = getInnerText($curlResult['data'], $tokenDivStart, $tokenDivEnd, $debug);
+                if ($response['status'] == 'success') {
+                    
+                    // Now that we have our source snippet search this area.
+                    $sourceDiv = $response['data'];
+                    $items     = array();
+                    
+                    if (!is_null($sourceDiv) && $sourceDiv != '') {
+                        /*
+                        <ul class="nocircle">
+                            <li><a href="../bymodel/2007_Lincoln_MKX.shtml">Lincoln  MKX</a></li>
+                            <li><a href="../bymodel/2007_Lincoln_MKZ.shtml">Lincoln  MKZ</a></li>
+                            <li><a href="../bymodel/2007_Lincoln_Mark_LT.shtml">Lincoln  Mark LT</a></li>
+                            <li><a href="../bymodel/2007_Lincoln_Navigator.shtml">Lincoln  Navigator</a></li>
+                            <li><a href="../bymodel/2007_Lincoln_Town_Car.shtml">Lincoln  Town Car</a></li>
+                        </ul>
+                        */
+                        $tokenItemStart = '<li>';
+                        $tokenItemEnd   = '</li>';
+                        $response = getInnerTextMulti($sourceDiv, $tokenItemStart, $tokenItemEnd);
+                        if ($response['status'] == 'success') {
+                            if ($debug) { echo "Result count == ".count($response['data'])."<br/>"; }
+                            foreach($response['data'] as $item) {
+                            
+                                $vUrl       = $urlEcoBase.getInnerText($item, 'href="..', '">')['data'];
+                                $needle = '">'.$make;
+                                $vMakeModel = trim(getInnerText($item, $needle, '</a>')['data']);
+                                if ($debug) {
+                                    echo "--- item       == [".$item."]<br/>";
+                                    echo "--- URL        == [".$vUrl."]<br/>";
+                                    echo "--- Needle     == [".$needle."]<br/>";
+                                    echo "--- Make/Model == [".$vMakeModel."]<br/>";
+                                    echo "*** Searching for [".$model."]<br/>";
+                                }
+
+                                if ($model !== '') {
+                                    $nPosModel = strpos($vMakeModel, $model);
+                                    if ($debug) { echo "--- nPosModel        == [".$nPosModel."]<br/>"; }
+                                    if ($nPosModel !== false && $nPosModel >= 0) {
+                                        if ($debug) { echo "!!! FOUND IT<br/>"; }
+                                        
+                                        $curlResult = doCurl('get', $vUrl, $headers, $userAgent, $cookieFile, $params);
+                                        if ($curlResult['status'] == 'success') {
+                                            // Parse the result and find the vehicle.
+                                            $ecoResults = getEcoResults( $curlResult['data'], $vehicle, $debug);
+                                            $result = $ecoResults['data'];
+                                        }
+                                        
+                                        break;
                                     }
-                                    
+                                } else {
                                     break;
                                 }
-                            } else {
-                                break;
                             }
                         }
                     }
                 }
             }
+        } else {
+            $isMissingParams = true;
         }
     }
     
-    if (array_key_exists("model", $result)) {
+    if ($isMissingParams) {
         $result = array("error" => true, "message" => "Missing 1 or more requried parameters: (year, make, model)");
     } else if (count($result) < 1) {
         $result = array("error" => true, "message" => "No data found for given parameters: (year: ".$year.", make: ".$make.", model: ".$model.")");
