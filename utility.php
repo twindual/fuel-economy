@@ -89,9 +89,9 @@ function getFuelEconomy($vehicle = null, $debug = false)
         $make         = $vehicle['make'];
         $model        = $vehicle['model'];
         $subModel     = $vehicle['subModel'];
-        $result       = fixEdgeCaseModel($make, $model, $subModel, $debug);
-        $model        = $result['model'];
-        $subModel     = $result['subModel'];
+        $response     = fixEdgeCaseModel($make, $model, $subModel, $debug);
+        $model        = $response['model'];
+        $subModel     = $response['subModel'];
         $urlEcoBase   = 'https://www.fueleconomy.gov/feg';
         $urlEcoCookie = $urlEcoBase.'/bymodel/'.$make.$year.'.shtml';
         
@@ -130,26 +130,34 @@ function getFuelEconomy($vehicle = null, $debug = false)
                     if ($response['status'] == 'success') {
                         if ($debug) { echo "Result count == ".count($response['data'])."<br/>"; }
                         foreach($response['data'] as $item) {
-                            if ($debug) { echo "*** Parsing result<br/>"; }
+                           
                             $vUrl       = $urlEcoBase.getInnerText($item, 'href="..', '">')['data'];
-                            $vMakeModel = trim(getInnerText($item, '">'.$make, '</a>')['data']);
+                            $needle = '">'.$make;
+                            $vMakeModel = trim(getInnerText($item, $needle, '</a>')['data']);
                             if ($debug) {
+                                echo "--- item       == [".$item."]<br/>";
                                 echo "--- URL        == [".$vUrl."]<br/>";
+                                echo "--- Needle     == [".$needle."]<br/>";
                                 echo "--- Make/Model == [".$vMakeModel."]<br/>";
                                 echo "*** Searching for [".$model."]<br/>";
                             }
-                            $nPosModel = strpos($vMakeModel, $model);
-                            if ($debug) { echo "--- nPosModel        == [".$nPosModel."]<br/>"; }
-                            if ($nPosModel !== false && $nPosModel >= 0) {
-                                if ($debug) { echo "!!! FOUND IT<br/>"; }
-                                
-                                $curlResult = doCurl('get', $vUrl, $headers, $userAgent, $cookieFile, $params);
-                                if ($curlResult['status'] == 'success') {
-                                    // Parse the result and find the vehicle.
-                                    $ecoResults = getEcoResults( $curlResult['data'], $vehicle, $debug);
-                                    $result = $ecoResults['data'];
+
+                            if ($model !== '') {
+                                $nPosModel = strpos($vMakeModel, $model);
+                                if ($debug) { echo "--- nPosModel        == [".$nPosModel."]<br/>"; }
+                                if ($nPosModel !== false && $nPosModel >= 0) {
+                                    if ($debug) { echo "!!! FOUND IT<br/>"; }
+                                    
+                                    $curlResult = doCurl('get', $vUrl, $headers, $userAgent, $cookieFile, $params);
+                                    if ($curlResult['status'] == 'success') {
+                                        // Parse the result and find the vehicle.
+                                        $ecoResults = getEcoResults( $curlResult['data'], $vehicle, $debug);
+                                        $result = $ecoResults['data'];
+                                    }
+                                    
+                                    break;
                                 }
-                                
+                            } else {
                                 break;
                             }
                         }
@@ -159,6 +167,12 @@ function getFuelEconomy($vehicle = null, $debug = false)
         }
     }
     
+    if (array_key_exists("model", $result)) {
+        $result = array("error" => true, "message" => "Missing 1 or more requried parameters: (year, make, model)");
+    } else if (count($result) < 1) {
+        $result = array("error" => true, "message" => "No data found for given parameters: (year: ".$year.", make: ".$make.", model: ".$model.")");
+    }
+
     return $result;
 }
 
@@ -214,6 +228,7 @@ function getEcoResults($source = '', $vehicle, $debug = false)
                 $vSubModel   = $vehicle['subModel'];
                 $vDrivetrain = $vehicle['drivetrain'];
                 
+                // Over-rides of model for Mazda and Ford F series.
                 $token = "MAZDA";
                 $nPosExtra = strpos($vModel, $token);
                 if ($debug) { echo "*** nPosExtra == [".$nPosExtra."] | ".$token."<br/>"; }
@@ -231,20 +246,26 @@ function getEcoResults($source = '', $vehicle, $debug = false)
                 }
                 
                 $vSubModel = fixSubModel($vSubModel, $engineSize);
+                if ($debug) { echo "*** NOW Searching for subModel [".$vSubModel."]<br/>"; }
                 
-                // Search SubModel + Drivetrain.
+                // Search SubModel w/ Drivetrain.
+                if ($debug) { echo "*** NOW Searching for subModel [".$vSubModel."] w/ drivetrain [".$drivetrain."]<br/>"; }
                 $items = getMpg( $response['data'], $vMake, $vModel, $vSubModel, $cylinders, $engineSize, $transmission, $drivetrain, $speed, $fuel, $debug);
                 if ($items == array()) {
-                    // Search Model + Drivetrain.
+                    // Search Model w/o subModel w/ Drivetrain.
+                    if ($debug) { echo "*** NOW Searching w/o subModel [".$vSubModel."] w/ drivetrain [".$drivetrain."]<br/>"; }
                     $items = getMpg( $response['data'], $vMake, $vModel, '', $cylinders, $engineSize, $transmission, $drivetrain, $speed, $fuel, $debug);
                     if ($items == array()) {
                         // Search SubModel w/o Drivetrain.
+                        if ($debug) { echo "*** NOW Searching w/ subModel [".$vSubModel."] w/o drivetrain [".$drivetrain."]<br/>"; }
                         $items = getMpg( $response['data'], $vMake, $vModel, $vSubModel, $cylinders, $engineSize, $transmission, '', $speed, $fuel, $debug);
                         if ($items == array()) {
-                                // Search Model w/o Drivetrain.
+                                // Search Model w/o subModel w/o Drivetrain.
+                                if ($debug) { echo "*** NOW Searching w/ subModel [".$vSubModel."] w/o drivetrain [".$drivetrain."]<br/>"; }
                                 $items = getMpg( $response['data'], $vMake, $vModel, '', $cylinders, $engineSize, $transmission, '', $speed, $fuel, $debug);
                                 if ($items == array()) {
                                     // Set default values.
+                                    if ($debug) { echo "*** Use default MPG values<br/>"; }
                                     $items['gas']['mpg']['city'] = '';
                                     $items['gas']['mpg']['combined'] = '';
                                     $items['gas']['mpg']['highway'] = '';
@@ -281,6 +302,7 @@ function getEcoResults($source = '', $vehicle, $debug = false)
 */
 function getMpg( $vehicles, $vMake, $vModel, $vSubModel, $cylinders, $engineSize, $transmission, $drivetrain, $speed, $fuel, $debug)
 {
+    if ($debug) { echo "-------- CALL getMpg() --------<br/>"; }
     $MPG_TO_LKM = 235.215;
     $items = array();
     foreach($vehicles as $item) {
@@ -331,9 +353,21 @@ function getMpg( $vehicles, $vMake, $vModel, $vSubModel, $cylinders, $engineSize
                 echo ">>> OPTIONS     == [".$options."]<br/>";
                 echo "--- FIND the options [".$tokenSearch."]<br/>";
             }
-            $nPosCylinders    = strpos($options, $cylinders.' cyl');
-            $nPosEngineSize   = strpos($options, $engineSize.' L');
-            $nPosTransmission = strpos($options, $transmission);
+
+            // IF we don't have a value for cylinders or engineSize or transmission THEN any value will do.
+            // So lets get the first one.
+            $nPosCylinders = 0;
+            $nPosEngineSize = 0;
+            $nPosTransmission = 0;
+            if ($cylinders !== '') {
+                $nPosCylinders    = strpos($options, $cylinders.' cyl');
+            }
+            if ($engineSize !== '') {
+                $nPosEngineSize   = strpos($options, $engineSize.' L');
+            }
+            if ($transmission !== '') {
+                $nPosTransmission = strpos($options, $transmission);
+            }
             
             if ($debug) {
                 echo "--- nPosCylinders == [".$nPosCylinders."]<br/>";
