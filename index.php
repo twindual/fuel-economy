@@ -31,23 +31,29 @@ echo json_encode($result);
 die();
 
 function doAction($action) {
-    $result     = array();
-    
+    $result = array();
+
+    // Fill in a missing action with 'get_fueleco'.
+    if ($action == '') {
+        $action = 'get_fueleco';
+    }
+
+    // Take appropriate action.
     switch ($action) {
         // ---------------------------------------------------------------------------------------
         case 'get_fueleco' :
         // ---------------------------------------------------------------------------------------
             $vehicleInfo = array(
-                'year'=>$year,
-                'make'=>$make,
-                'model'=>$model,
-                'subModel'=>$subModel,
-                'cylinders'=>$cylinders,
-                'engineSize'=>$engineSize,
-                'transmission'=>$transmission,
-                'drivetrain'=>$drivetrain,
-                'speed'=>$speed,
-                'fuel'=>$fuel
+                'year'=>'',
+                'make'=>'',
+                'model'=>'',
+                'subModel'=>'',
+                'cylinders'=>'',
+                'engineSize'=>'',
+                'transmission'=>'',
+                'drivetrain'=>'',
+                'speed'=>'',
+                'fuel'=>''
             );
             
             if (isset($_REQUEST['year']))         { $vehicleInfo['year']         = $_REQUEST['year']; }
